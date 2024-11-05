@@ -8,27 +8,26 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="/static/styles.css">
     <script defer src="https://cdn.jsdelivr.net/gh/hunghg255/quill-resize-module/dist/quill-resize-image.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Arial&family=Courier+New&family=Georgia&family=Times+New+Roman&display=swap" rel="stylesheet">
 </head>
 <body class="bg-blue-50 text-blue-900">
     <div class="container mx-auto p-4">
         <h1 class="text-3xl font-bold mb-6 text-center text-blue-700">Editor HTML Profesional</h1>
+        <div class="flex justify-end mb-4 gap-2">
+            <input type="text" id="draft-name" placeholder="Nombre del borrador" class="px-4 py-2 border rounded-lg">
+            <button onclick="saveDraft()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Guardar Borrador</button>
+            <select id="draft-list" onchange="loadDraft(this.value)" class="px-4 py-2 border rounded-lg" aria-label="Lista de borradores">
+                <option value="">Cargar borrador...</option>
+            </select>
+        </div>
         <div class="card mb-6 bg-white shadow-lg rounded-lg" role="region" aria-labelledby="editor-title">
             <div class="card-header bg-blue-700 text-white p-4 rounded-t-lg">
                 <h2 id="editor-title" class="card-title text-xl">Editor</h2>
             </div>
             <div class="card-content p-4">
-                <div id="editor" class="w-full h-[calc(100vh-400px)] mb-4 bg-white border border-blue-300 rounded-lg" role="textbox" aria-multiline="true"></div>
+                <div id="editor" class="w-full h-[calc(100vh-400px)] mb-4 bg-white border border-blue-300 rounded-lg" role="textbox" aria-multiline="true" aria-label="Editor"></div>
                 <div class="flex justify-between">
-                    <form action="/download" method="post">
-                        <input type="hidden" name="content" id="html-content">
-                        <input type="hidden" name="file_type" value="html">
-                        <button type="submit" onclick="setHtmlContent()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800">Descargar HTML</button>
-                    </form>
-                    <form action="/download" method="post">
-                        <input type="hidden" name="content" id="css-content">
-                        <input type="hidden" name="file_type" value="css">
-                        <button type="submit" onclick="setCssContent()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800">Descargar CSS</button>
-                    </form>
+                    <button onclick="downloadAll()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800">Descargar Proyecto</button>
                 </div>
             </div>
         </div>
@@ -56,7 +55,6 @@
                 [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
                 [{ 'direction': 'rtl' }],                         // text direction
 
-                [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
                 [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
                 [ 'link', 'image', 'video', 'formula' ],          // add's image support
                 [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
@@ -125,6 +123,143 @@
                 };
                 input.click();
             });
+
+            async function downloadAll() {
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Documento Exportado</title>
+                        <style>
+                            /* Estilos base */
+                            @import url('https://fonts.googleapis.com/css2?family=Arial&family=Courier+New&family=Georgia&family=Times+New+Roman&display=swap');
+                            
+                            body {
+                                margin: 0 auto;
+                                padding: 20px;
+                                max-width: 900px;
+                            }
+
+                            /* Estilos Quill */
+                            .ql-align-center {
+                                text-align: center;
+                            }
+                            .ql-align-right {
+                                text-align: right;
+                            }
+                            .ql-align-justify {
+                                text-align: justify;
+                            }
+                            
+                            /* Estilos para imágenes */
+                            img {
+                                max-width: 100%;
+                                height: auto;
+                            }
+                            
+                            /* Estilos para bloques de código */
+                            .ql-syntax {
+                                background-color: #f4f4f4;
+                                border-radius: 3px;
+                                padding: 10px;
+                                font-family: 'Courier New', monospace;
+                            }
+                            
+                            /* Estilos para listas */
+                            .ql-indent-1 { margin-left: 2em; }
+                            .ql-indent-2 { margin-left: 4em; }
+                            .ql-indent-3 { margin-left: 6em; }
+                            
+                            /* Estilos personalizados del usuario */
+                            ${cssEditor.value}
+                        </style>
+                    </head>
+                    <body>
+                        ${quill.root.innerHTML}
+                    </body>
+                    </html>
+                `;
+                
+                const formData = new FormData();
+                formData.append('content', encodeURIComponent(htmlContent));
+                formData.append('file_type', 'html');
+                
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'documento_exportado.html';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+
+            window.downloadAll = downloadAll;
+
+            // Cargar lista de borradores al iniciar
+            loadDraftList();
+
+            async function loadDraftList() {
+                const response = await fetch('/drafts');
+                const drafts = await response.json();
+                const select = document.getElementById('draft-list');
+                select.innerHTML = '<option value="">Cargar borrador...</option>';
+                drafts.forEach(draft => {
+                    const option = document.createElement('option');
+                    option.value = draft.name;
+                    option.textContent = draft.name;
+                    select.appendChild(option);
+                });
+            }
+
+            async function saveDraft() {
+                const name = document.getElementById('draft-name').value;
+                if (!name) {
+                    alert('Por favor ingrese un nombre para el borrador');
+                    return;
+                }
+
+                const content = {
+                    html: quill.root.innerHTML,
+                    css: cssEditor.value
+                };
+
+                const response = await fetch('/drafts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        content: content
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Borrador guardado exitosamente');
+                    loadDraftList();
+                }
+            }
+
+            async function loadDraft(name) {
+                if (!name) return;
+                
+                const response = await fetch(`/drafts/${name}`);
+                const draft = await response.json();
+                
+                quill.root.innerHTML = draft.content.html;
+                cssEditor.value = draft.content.css;
+            }
+
+            window.saveDraft = saveDraft;
+            window.loadDraft = loadDraft;
         });
     </script>
 </body>
