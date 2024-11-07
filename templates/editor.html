@@ -4,67 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor HTML Profesional</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script defer src="https://cdn.jsdelivr.net/gh/hunghg255/quill-resize-module/dist/quill-resize-image.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Arial&family=Courier+New&family=Georgia&family=Times+New+Roman&display=swap" rel="stylesheet">
 </head>
 <body class="bg-blue-50 text-blue-900">
     <div class="container mx-auto p-4">
         <h1 class="text-3xl font-bold mb-6 text-center text-blue-700">Editor HTML Profesional</h1>
+        
         <div class="flex justify-end mb-4 gap-2">
             <input type="text" id="draft-name" placeholder="Nombre del borrador" class="px-4 py-2 border rounded-lg">
             <button onclick="saveDraft()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Guardar Borrador</button>
-            <select id="draft-list" onchange="loadDraft(this.value)" class="px-4 py-2 border rounded-lg" aria-label="Lista de borradores">
+            <select id="draft-list" onchange="loadDraft(this.value)" class="px-4 py-2 border rounded-lg">
                 <option value="">Cargar borrador...</option>
             </select>
         </div>
-        <div class="card mb-6 bg-white shadow-lg rounded-lg" role="region" aria-labelledby="editor-title">
-            <div class="card-header bg-blue-700 text-white p-4 rounded-t-lg">
-                <h2 id="editor-title" class="card-title text-xl">Editor</h2>
+
+        <div class="bg-white shadow-lg rounded-lg p-4">
+            <div id="toolbar-container">
+                <span class="ql-formats">
+                    <select class="ql-font"></select>
+                    <select class="ql-size"></select>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                    <button class="ql-strike"></button>
+                </span>
+                <span class="ql-formats">
+                    <select class="ql-color"></select>
+                    <select class="ql-background"></select>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-script" value="sub"></button>
+                    <button class="ql-script" value="super"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-header" value="1"></button>
+                    <button class="ql-header" value="2"></button>
+                    <button class="ql-blockquote"></button>
+                    <button class="ql-code-block"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-list" value="ordered"></button>
+                    <button class="ql-list" value="bullet"></button>
+                    <button class="ql-indent" value="-1"></button>
+                    <button class="ql-indent" value="+1"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-direction" value="rtl"></button>
+                    <select class="ql-align"></select>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-link"></button>
+                    <button class="ql-image"></button>
+                    <button class="ql-video"></button>
+                    <button class="ql-formula"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-clean"></button>
+                </span>
             </div>
-            <div class="card-content p-4">
-                <div id="editor" class="w-full h-[calc(100vh-400px)] mb-4 bg-white border border-blue-300 rounded-lg" role="textbox" aria-multiline="true" aria-label="Editor"></div>
-                <div class="flex justify-between">
-                    <button onclick="downloadAll()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800">Descargar Proyecto</button>
-                </div>
-            </div>
-        </div>
-        <div class="card bg-white shadow-lg rounded-lg" role="region" aria-labelledby="css-title">
-            <div class="card-header bg-blue-700 text-white p-4 rounded-t-lg">
-                <h2 id="css-title" class="card-title text-xl">CSS Personalizado</h2>
-            </div>
-            <div class="card-content p-4">
-                <textarea id="css-editor" class="w-full h-64 font-mono bg-white border border-blue-300 rounded-lg p-2" placeholder="Añade tu CSS personalizado aquí..." aria-label="CSS editor"></textarea>
+            <div id="editor" class="h-[500px]"></div>
+            <div class="mt-4">
+                <button onclick="downloadAll()" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800">Descargar Proyecto</button>
             </div>
         </div>
     </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const cssEditor = document.getElementById('css-editor');
-
-            var toolbarOptions = [
-                ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-                ['blockquote', 'code-block'],
-
-                [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-                [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-                [{ 'direction': 'rtl' }],                         // text direction
-
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                [ 'link', 'image', 'video', 'formula' ],          // add's image support
-                [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-                [{ 'font': [] }],
-                [{ 'align': [] }],
-
-                ['clean']                                         // remove formatting button
-            ];
-
-            // Esperar a que el script de quill-resize-image se cargue
+            // Registrar el módulo de resize
             if (window.QuillResizeImage) {
                 Quill.register("modules/resize", window.QuillResizeImage);
             } else {
@@ -73,43 +91,20 @@
                 });
             }
 
+            // Inicializar Quill
             const quill = new Quill('#editor', {
-                theme: 'snow',
                 modules: {
-                    toolbar: toolbarOptions,
+                    syntax: true,
+                    toolbar: '#toolbar-container',
                     resize: {
-                        locale: {},
+                        locale: {}
                     }
-                }
+                },
+                placeholder: 'Comienza a escribir aquí...',
+                theme: 'snow'
             });
 
-            function setHtmlContent() {
-                const htmlContent = quill.root.innerHTML;
-                document.getElementById('html-content').value = encodeURIComponent(htmlContent);
-            }
-
-            function setCssContent() {
-                const cssContent = cssEditor.value;
-                document.getElementById('css-content').value = encodeURIComponent(cssContent);
-            }
-
-            window.setHtmlContent = setHtmlContent;
-            window.setCssContent = setCssContent;
-
-            async function uploadImage(file) {
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const response = await fetch('/upload-image', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                return data.webp_base64;
-            }
-
-            // Anular la acción predeterminada del botón de imagen de Quill
+            // Manejo de imágenes
             const toolbar = quill.getModule('toolbar');
             toolbar.addHandler('image', () => {
                 const input = document.createElement('input');
@@ -117,13 +112,22 @@
                 input.accept = 'image/*';
                 input.onchange = async () => {
                     const file = input.files[0];
-                    const base64 = await uploadImage(file);
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/upload-image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
                     const range = quill.getSelection();
-                    quill.insertEmbed(range.index, 'image', `data:image/webp;base64,${base64}`);
+                    quill.insertEmbed(range.index, 'image', `data:image/webp;base64,${data.webp_base64}`);
                 };
                 input.click();
             });
 
+            // Resto de las funciones
             async function downloadAll() {
                 const htmlContent = `
                     <!DOCTYPE html>
@@ -143,23 +147,15 @@
                             }
 
                             /* Estilos Quill */
-                            .ql-align-center {
-                                text-align: center;
-                            }
-                            .ql-align-right {
-                                text-align: right;
-                            }
-                            .ql-align-justify {
-                                text-align: justify;
-                            }
+                            .ql-align-center { text-align: center; }
+                            .ql-align-right { text-align: right; }
+                            .ql-align-justify { text-align: justify; }
                             
-                            /* Estilos para imágenes */
                             img {
                                 max-width: 100%;
                                 height: auto;
                             }
                             
-                            /* Estilos para bloques de código */
                             .ql-syntax {
                                 background-color: #f4f4f4;
                                 border-radius: 3px;
@@ -167,13 +163,9 @@
                                 font-family: 'Courier New', monospace;
                             }
                             
-                            /* Estilos para listas */
                             .ql-indent-1 { margin-left: 2em; }
                             .ql-indent-2 { margin-left: 4em; }
                             .ql-indent-3 { margin-left: 6em; }
-                            
-                            /* Estilos personalizados del usuario */
-                            ${cssEditor.value}
                         </style>
                     </head>
                     <body>
@@ -201,11 +193,6 @@
                 a.remove();
             }
 
-            window.downloadAll = downloadAll;
-
-            // Cargar lista de borradores al iniciar
-            loadDraftList();
-
             async function loadDraftList() {
                 const response = await fetch('/drafts');
                 const drafts = await response.json();
@@ -227,8 +214,7 @@
                 }
 
                 const content = {
-                    html: quill.root.innerHTML,
-                    css: cssEditor.value
+                    html: quill.root.innerHTML
                 };
 
                 const response = await fetch('/drafts', {
@@ -255,11 +241,14 @@
                 const draft = await response.json();
                 
                 quill.root.innerHTML = draft.content.html;
-                cssEditor.value = draft.content.css;
             }
 
+            window.downloadAll = downloadAll;
             window.saveDraft = saveDraft;
             window.loadDraft = loadDraft;
+
+            // Cargar lista de borradores al iniciar
+            loadDraftList();
         });
     </script>
 </body>
